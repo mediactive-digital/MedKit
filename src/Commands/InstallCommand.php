@@ -21,7 +21,7 @@ class InstallCommand extends Command {
      *
      * @var string
      */
-    protected $signature = 'medkit:install {--theme=mediactive-digital/medkit-theme-malabar:dev-L10@dev}';
+    protected $signature = 'medkit:install {--theme=mediactive-digital/medkit-theme-malabar:dev-L11@dev}';
     protected $description = 'Installation du starterkit';
 
     private $pathToPackageRoot = __DIR__ . '/../../';
@@ -193,8 +193,8 @@ class InstallCommand extends Command {
             "barryvdh/laravel-debugbar:*",
             "barryvdh/laravel-ide-helper:*",
             "laravel/dusk:*",
-            "mediactive-digital/laravel:dev-L10@dev",
-            "mediactive-digital/migrations-generator:dev-L10@dev"
+            "mediactive-digital/laravel:dev-L11@dev",
+            "mediactive-digital/migrations-generator:dev-L11@dev"
         ];
         $this->doCommand("composer require " . implode(' ', $devPackages) . " --dev");
 
