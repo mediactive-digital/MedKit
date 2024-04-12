@@ -163,7 +163,7 @@ class Helper {
      */
     public static function getTablePrimaryName(string $table): string {
 
-        $indexes = Schema::getConnection()->getDoctrineSchemaManager()->listTableIndexes($table);
+        $indexes = Schema::getIndexes($table);
         $primary = $indexes && isset($indexes['primary']) ? (($primaryColumns = $indexes['primary']->getColumns()) && isset($primaryColumns[0]) ? $primaryColumns[0] : '') : '';
 
         return $primary;
