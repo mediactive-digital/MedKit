@@ -208,34 +208,26 @@ class InstallCommand extends Command {
      */
     public function addProviders() {
 
-        $this->info('Add Providers to config/app.php');
+        $this->info('Add Providers to bootstrap/providers.php');
 
-        $path = base_path('config') . '/app.php';
+        $path = base_path('bootstrap') . '/providers.php';
         $configContents = file_get_contents($path);
         $add = false;
 
-        $configContents = preg_replace_callback('/(\'providers\' => \[)([\s\S]*?)(])/', function($matches) use (&$add) {
+        $configContents = preg_replace_callback('/(return \[)([\s\S]*?)(])/', function($matches) use (&$add) {
 
-            $matches2 = $matches[2];
+            if (strpos($matches[2], 'Rairlie\LockingSession\LockingSessionServiceProvider') === false) {
 
-            if (strpos($matches2, 'Rairlie\LockingSession\LockingSessionServiceProvider') === false) {
+                $matches[2] = str_replace('Illuminate\Session\SessionServiceProvider', '// Illuminate\Session\SessionServiceProvider', $matches[2]);
 
-                $matches2 = str_replace('Illuminate\Session\SessionServiceProvider', '// Illuminate\Session\SessionServiceProvider', $matches2);
-
-                $matches2 = preg_replace_callback('/(Package Service Providers[\s\S]*?\*\/)([\s\S]*?)(\/\*)/', function($matches) {
-
-                    $return = $matches[1] . rtrim($matches[2]) . FormatHelper::NEW_LINE . FormatHelper::TAB . FormatHelper::TAB .
-                        'Rairlie\LockingSession\LockingSessionServiceProvider::class,' . 
-                        FormatHelper::NEW_LINE . FormatHelper::NEW_LINE . FormatHelper::TAB . FormatHelper::TAB . $matches[3];
-
-                    return $return;
-
-                }, $matches2);
+                $matches[2] = rtrim($matches[2]) . FormatHelper::NEW_LINE . FormatHelper::TAB .
+                    'Rairlie\LockingSession\LockingSessionServiceProvider::class,' . 
+                    FormatHelper::NEW_LINE;
 
                 $add = true;
             }
 
-            $return = $matches[1] . $matches2 . $matches[3];
+            $return = $matches[1] . $matches[2] . $matches[3];
     
             return $return;
 
