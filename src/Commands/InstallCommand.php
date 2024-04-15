@@ -38,12 +38,11 @@ class InstallCommand extends Command {
         6 => 'Add Route',
         7 => 'Add AdminGuard',
         8 => 'Add session config',
-        9 => 'Add Facades',
-        10 => 'Install Theme',
-        11 => 'Add helpers',
-        12 => 'Generate Laravel default translations for Poedit',
-        13 => 'Generate JS translations',
-        14 => 'Generate JS routes'
+        9 => 'Install Theme',
+        10 => 'Add helpers',
+        11 => 'Generate Laravel default translations for Poedit',
+        12 => 'Generate JS translations',
+        13 => 'Generate JS routes'
     ];
 
     /**
@@ -83,7 +82,6 @@ class InstallCommand extends Command {
                     $this->addRoutes();
                     $this->addAdminGuard();
                     $this->addSessionConfig();
-                    $this->addFacades();
                     $this->installTheme();
                     $this->generateTranslations();
                     $this->generateJsTranslations();
@@ -140,37 +138,31 @@ class InstallCommand extends Command {
 
                 case 9 :
 
-                    $this->addFacades();
-
-                break;
-
-                case 10 :
-
                     $this->installTheme();
                     $this->composerDump();
 
                 break;
 
-                case 11 :
+                case 10 :
 
                     $this->addHelpers();
                     $this->composerDump();
                     
                 break;
 
-                case 12 :
+                case 11 :
 
                     $this->generateTranslations();
                     
                 break;
 
-                case 13 :
+                case 12 :
 
                     $this->generateJsTranslations();
                     
                 break;
 
-                case 14 :
+                case 13 :
 
                     $this->generateJsRoutes();
                     
@@ -214,7 +206,7 @@ class InstallCommand extends Command {
         $configContents = file_get_contents($path);
         $add = false;
 
-        $configContents = preg_replace_callback('/(return \[)([\s\S]*?)(])/', function($matches) use (&$add) {
+        $configContents = preg_replace_callback('/(return \[)([\s\S]*?)(])/', function ($matches) use (&$add) {
 
             if (strpos($matches[2], 'Rairlie\LockingSession\LockingSessionServiceProvider') === false) {
 
@@ -222,6 +214,15 @@ class InstallCommand extends Command {
 
                 $matches[2] = rtrim($matches[2]) . FormatHelper::NEW_LINE . FormatHelper::TAB .
                     'Rairlie\LockingSession\LockingSessionServiceProvider::class,' . 
+                    FormatHelper::NEW_LINE;
+
+                $add = true;
+            }
+
+            if (strpos($matches[2], 'App\Providers\AliasServiceProvider::class') === false) {
+
+                $matches[2] = rtrim($matches[2]) . FormatHelper::NEW_LINE . FormatHelper::TAB .
+                    'App\Providers\AliasServiceProvider::class,' . 
                     FormatHelper::NEW_LINE;
 
                 $add = true;
@@ -453,26 +454,6 @@ class InstallCommand extends Command {
         ])];
         $sectionTitle = "Resetting Passwords";
         ConfigHelper::replaceArrayInConfig($fileToEdit, $sectionTitle, null, $authConfigPasswordBroker);
-    }
-
-    /**
-     * Add facades to configuration
-     */
-    public function addFacades() {
-
-        $this->info('Add Facades to config/app.php');
-
-        $fileToEdit = base_path('config') . '/app.php';
-        $sectionTitle = 'Class Aliases';
-        $appConfig = include($fileToEdit);
-
-        $appConfigFacades = ['aliases' => array_merge($appConfig['aliases'], [
-            'Debugbar' => \Barryvdh\Debugbar\Facade::class,
-            'Translation' => \App\Helpers\TranslationHelper::class,
-            'Format' => \App\Helpers\FormatHelper::class
-        ])];
-
-        ConfigHelper::replaceArrayInConfig($fileToEdit, $sectionTitle, null, $appConfigFacades);
     }
 
     /**
