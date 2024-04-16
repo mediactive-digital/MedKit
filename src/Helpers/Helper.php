@@ -163,8 +163,18 @@ class Helper {
      */
     public static function getTablePrimaryName(string $table): string {
 
+        $primary = '';
         $indexes = Schema::getIndexes($table);
-        $primary = $indexes && isset($indexes['primary']) ? (($primaryColumns = $indexes['primary']->getColumns()) && isset($primaryColumns[0]) ? $primaryColumns[0] : '') : '';
+        
+        foreach ($indexes as $index) {
+
+            if ($index['name'] == 'primary') {
+
+                $primary = $index['columns'][0];
+
+                break;
+            }
+        }
 
         return $primary;
     }
