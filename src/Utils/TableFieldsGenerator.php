@@ -9,6 +9,7 @@ use MediactiveDigital\MedKit\Traits\Reflection;
 use MediactiveDigital\MedKit\Helpers\FormatHelper;
 
 use Str;
+use Schema;
 
 class TableFieldsGenerator extends InfyOmTableFieldsGenerator {
 
@@ -41,16 +42,13 @@ class TableFieldsGenerator extends InfyOmTableFieldsGenerator {
         $this->schemaManager = $this->getReflectionProperty('schemaManager');
         $this->columns = $this->getReflectionProperty('columns');
 
-        $platform = $this->schemaManager->getDatabasePlatform();
-        $platform->registerDoctrineTypeMapping('json', 'json');
-
-        $columns = $this->schemaManager->listTableColumns($tableName);
+        $columns = Schema::getColumns($tableName);
 
         $this->columns = [];
 
         foreach ($columns as $column) {
 
-            if (!in_array($column->getName(), $ignoredFields)) {
+            if (!in_array($column, $ignoredFields)) {
 
                 $this->columns[] = $column;
             }
@@ -72,7 +70,7 @@ class TableFieldsGenerator extends InfyOmTableFieldsGenerator {
 
         foreach ($this->columns as $column) {
 
-            $type = $column->getType()->getName();
+            $type = $column['type_name'];
 
             switch ($type) {
 
@@ -162,10 +160,10 @@ class TableFieldsGenerator extends InfyOmTableFieldsGenerator {
                 break;
             }
 
-            $field->isNotNull = (bool)$column->getNotNull();
+            $field->isNotNull = !$column['nullable'];
 
             // Get comments from table
-            $field->description = $column->getComment();
+            $field->description = $column['comment'];
 
             if (!$field->isPrimary) {
 
@@ -214,7 +212,7 @@ class TableFieldsGenerator extends InfyOmTableFieldsGenerator {
                             $validations[] = 'min:' . ($min);
                         }
                     }
-                    else if (!$isPassword && $field->htmlType == 'text' && ($max = $column->getLength())) {
+                    else if (!$isPassword && $field->htmlType == 'text' && ($max = Str::contains($column['type'], '(') ? (int)Str::between($column['type'], '(', ')') : 0)) {
 
                         $validations[] = 'max:' . $max;
                     }
@@ -249,14 +247,25 @@ class TableFieldsGenerator extends InfyOmTableFieldsGenerator {
                         $validations[] = 'array';
                     }
 
-                    $indexes = $this->schemaManager->listTableDetails($this->tableName)->getIndexes();
-                    $primaryKey = isset($indexes['primary']) ? $indexes['primary']->getColumns()[0] : '';
+                    $primaryKey = '';
+
+                    $indexes = Schema::getIndexes($this->tableName);
 
                     foreach ($indexes as $index) {
 
-                        if ($index->isUnique()) {
+                        if ($index['name'] == 'primary') {
 
-                            $columns = $index->getColumns();
+                            $primaryKey = $index['columns'][0];
+
+                            break;
+                        }
+                    }
+
+                    foreach ($indexes as $index) {
+
+                        if ($index['unique']) {
+
+                            $columns = $index['columns'];
 
                             if (in_array($field->name, $columns)) {
 
