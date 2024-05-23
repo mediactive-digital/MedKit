@@ -195,7 +195,7 @@ class TableFieldsGenerator extends InfyOmTableFieldsGenerator {
 
                         $validations[] = 'numeric';
 
-                        if ($column->getUnsigned()) {
+                        if (Str::contains($column['type'], 'unsigned')) {
 
                             $min = 0;
 

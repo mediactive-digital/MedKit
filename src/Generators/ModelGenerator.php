@@ -204,7 +204,7 @@ class ModelGenerator extends InfyOmModelGenerator {
     private function generateMutators(): array {
 
         $mutators = [];
-        $template = get_template('model.mutator');
+        $template = get_template('model.mutator', 'laravel-generator');
         $ignore = array_merge($this->timestamps, [$this->lastActivity]);
 
         foreach ($this->commandData->fields as $field) {
@@ -393,7 +393,7 @@ class ModelGenerator extends InfyOmModelGenerator {
             $templateData = $this->generateSwagger($templateData);
         }
 
-        $docsTemplate = get_template('docs.model');
+        $docsTemplate = get_template('docs.model', 'laravel-generator');
         $docsTemplate = fill_template($this->commandData->dynamicVars, $docsTemplate);
 
         $fillables = '';
