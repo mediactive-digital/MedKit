@@ -1298,4 +1298,38 @@ class FormatHelper {
 
         return $first . '[' . implode('][', $name) . ']';
     }
+
+    /**
+     * Generate a URL friendly "slug" from a given string.
+     *
+     * @param string $title
+     * @param string $separator
+     * @param string|null $language
+     * @param bool $lower
+     *
+     * @return string $slug
+     */
+    public static function slug(string $title, string $separator = '-', $language = '', bool $lower = true): string {
+
+        $language = $language === '' ? config('laravel-gettext.locale') : $language;
+        $title = $language ? Str::ascii($title, $language) : $title;
+
+        // Convert all dashes/underscores into separator
+        $flip = $separator === '-' ? '_' : '-';
+
+        $title = preg_replace('![' . preg_quote($flip) . ']+!u', $separator, $title);
+
+        // Replace @ with the word 'at'
+        $title = str_replace('@', $separator . 'at' . $separator, $title);
+
+        // Remove all characters that are not the separator, letters, numbers, or whitespace.
+        $title = preg_replace('![^' . preg_quote($separator) . '\pL\pN\s]+!u', '', $lower ? Str::lower($title) : $title);
+
+        // Replace all separator characters and whitespace by a single separator
+        $title = preg_replace('![' . preg_quote($separator) . '\s]+!u', $separator, $title);
+
+        $slug = trim($title, $separator);
+
+        return $slug;
+    }
 }
