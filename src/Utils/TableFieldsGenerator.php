@@ -40,6 +40,11 @@ class TableFieldsGenerator extends InfyOmTableFieldsGenerator {
      */
     public $driver;
 
+    /** 
+     * @var string 
+     */
+    public $charset;
+
     public function __construct($tableName, $ignoredFields, $connection = '') {
 
         parent::__construct($tableName, $ignoredFields, $connection);
@@ -65,7 +70,10 @@ class TableFieldsGenerator extends InfyOmTableFieldsGenerator {
         $this->userStamps = static::getUserStampsFieldNames();
         $this->lastActivity = static::getLastActivityFieldName();
 
-        $this->driver = config('database.connections.' . config('database.default') . '.driver');
+        $database = config('database.default');
+
+        $this->driver = config('database.connections.' . $database . '.driver');
+        $this->charset = config('database.connections.' . $database . '.charset');
     }
 
     /**
@@ -162,7 +170,7 @@ class TableFieldsGenerator extends InfyOmTableFieldsGenerator {
 
                 case 'longtext' :
 
-                    if ($this->driver == 'mariadb') {
+                    if ($this->driver == 'mariadb' && $column['collation'] == $this->charset . '_bin') {
 
                         $field = $this->callReflectionMethod('generateField', $column, 'json', 'textarea');
                     }
