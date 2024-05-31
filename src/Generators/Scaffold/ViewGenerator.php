@@ -18,10 +18,10 @@ use MediactiveDigital\MedKit\Helpers\Helper;
 class ViewGenerator extends InfyOmViewGenerator    
 {
     use Reflection;
-	
-	
-	/// A surcharger !!!
-	
+    
+    
+    /// A surcharger !!!
+    
     /** @var CommandData */
     private $commandData;
 
@@ -38,16 +38,16 @@ class ViewGenerator extends InfyOmViewGenerator
      * @var string 
      */
     private $flashValidationErrors;
-	 
-	const TABLE_GENERATE_BLADE_FILE				 = 'table.blade.php';
-	const INDEX_GENERATE_BLADE_FILE				 = 'index.blade.php';
-	const FIELDS_GENERATE_BLADE_FILE			 = 'fields.blade.php';
-	const CREATE_GENERATE_BLADE_FILE			 = 'create.blade.php';
-	const EDIT_GENERATE_BLADE_FILE				 = 'edit.blade.php';
-	const SHOW_GENERATE_BLADE_FILE				 = 'show.blade.php';
-	const SHOW_FIELDS_GENERATE_BLADE_FILE		 = 'show_fields.blade.php';
-	const DATATABLES_ACTIONS_GENERATE_BLADE_FILE = 'datatables_actions.blade.php';
-	
+     
+    const TABLE_GENERATE_BLADE_FILE              = 'table.blade.php';
+    const INDEX_GENERATE_BLADE_FILE              = 'index.blade.php';
+    const FIELDS_GENERATE_BLADE_FILE             = 'fields.blade.php';
+    const CREATE_GENERATE_BLADE_FILE             = 'create.blade.php';
+    const EDIT_GENERATE_BLADE_FILE               = 'edit.blade.php';
+    const SHOW_GENERATE_BLADE_FILE               = 'show.blade.php';
+    const SHOW_FIELDS_GENERATE_BLADE_FILE        = 'show_fields.blade.php';
+    const DATATABLES_ACTIONS_GENERATE_BLADE_FILE = 'datatables_actions.blade.php';
+    
     public function __construct(CommandData $commandData) {
 
         $this->commandData = $commandData;
@@ -132,11 +132,11 @@ class ViewGenerator extends InfyOmViewGenerator
     {
         $templateName = 'datatables_actions';
 
-		if ( config('infyom.laravel_generator.add_on.permissions.enabled', true) && config('infyom.laravel_generator.add_on.permissions.policies', true) ) { 
-				$templateName .= '_policies';
-		}
-		
-		// Plus besoin du localizeTemplate, on part sur du _i de base
+        if ( config('infyom.laravel_generator.add_on.permissions.enabled', true) && config('infyom.laravel_generator.add_on.permissions.policies', true) ) { 
+                $templateName .= '_policies';
+        }
+        
+        // Plus besoin du localizeTemplate, on part sur du _i de base
         if ($this->commandData->isLocalizedTemplates()) {
             $templateName .= '_locale';
         }
@@ -150,16 +150,108 @@ class ViewGenerator extends InfyOmViewGenerator
 
         $this->commandData->commandInfo( self::DATATABLES_ACTIONS_GENERATE_BLADE_FILE . ' created');
     }
+
+    private function generateBladeTableBody()
+    {
+        $templateName = 'blade_table_body';
+
+        $tableFields = $this->generateTableHeaderFields();
+        if ($this->commandData->jqueryDT()) {
+            $templateName = 'js_table';
+            $tableFields = $this->generateJSTableHeaderFields();
+        }
+
+        if ($this->commandData->isLocalizedTemplates()) {
+            $templateName .= '_locale';
+        }
+
+        $templateData = get_template('scaffold.views.'.$templateName, $this->templateType);
+
+        $templateData = fill_template($this->commandData->dynamicVars, $templateData);
+
+        $templateData = str_replace('$FIELD_HEADERS$', $tableFields, $templateData);
+
+        $cellFieldTemplate = get_template('scaffold.views.table_cell', $this->templateType);
+
+        $tableBodyFields = [];
+
+        foreach ($this->commandData->fields as $field) {
+            if (!$field->inIndex) {
+                continue;
+            }
+
+            $tableBodyFields[] = fill_template_with_field_data(
+                $this->commandData->dynamicVars,
+                $this->commandData->fieldNamesMapping,
+                $cellFieldTemplate,
+                $field
+            );
+        }
+
+        $tableBodyFields = implode(infy_nl_tab(1, 3), $tableBodyFields);
+
+        return str_replace('$FIELD_BODY$', $tableBodyFields, $templateData);
+    }
+
+    private function generateTableHeaderFields()
+    {
+        $templateName = 'table_header';
+
+        $localized = false;
+        if ($this->commandData->isLocalizedTemplates()) {
+            $templateName .= '_locale';
+            $localized = true;
+        }
+
+        $headerFieldTemplate = get_template('scaffold.views.'.$templateName, $this->templateType);
+
+        $headerFields = [];
+
+        foreach ($this->commandData->fields as $field) {
+            if (!$field->inIndex) {
+                continue;
+            }
+
+            if ($localized) {
+                /**
+                 * Replacing $FIELD_NAME$ before fill_template_with_field_data_locale() otherwise also
+                 * $FIELD_NAME$ get replaced with @lang('models/$modelName.fields.$value')
+                 * and so we don't have $FIELD_NAME$ in table_header_locale.stub
+                 * We could need 'raw' field name in header for example for sorting.
+                 * We still have $FIELD_NAME_TITLE$ replaced with @lang('models/$modelName.fields.$value').
+                 *
+                 * @see issue https://github.com/InfyOmLabs/laravel-generator/issues/887
+                 */
+                $preFilledHeaderFieldTemplate = str_replace('$FIELD_NAME$', $field->name, $headerFieldTemplate);
+
+                $headerFields[] = $fieldTemplate = fill_template_with_field_data_locale(
+                    $this->commandData->dynamicVars,
+                    $this->commandData->fieldNamesMapping,
+                    $preFilledHeaderFieldTemplate,
+                    $field
+                );
+            } else {
+                $headerFields[] = $fieldTemplate = fill_template_with_field_data(
+                    $this->commandData->dynamicVars,
+                    $this->commandData->fieldNamesMapping,
+                    $headerFieldTemplate,
+                    $field
+                );
+            }
+        }
+
+        return implode(infy_nl_tab(1, 2), $headerFields);
+    }
  
     private function generateIndex()
     {
         $templateName = 'index';
 
-		if ( config('infyom.laravel_generator.add_on.permissions.enabled', true) && config('infyom.laravel_generator.add_on.permissions.policies', true) ) { 
-				$templateName .= '_policies';
-		}
-		
-		// Plus besoin du localizeTemplate, on part sur du _i de base
+        if ( config('infyom.laravel_generator.add_on.permissions.enabled', true) && config('infyom.laravel_generator.add_on.permissions.policies', true) ) { 
+                $templateName .= '_policies';
+        }
+        
+        // Plus besoin du localizeTemplate, on part sur du _i de base
         if ($this->commandData->isLocalizedTemplates()) {
             $templateName .= '_locale';
         }
@@ -370,13 +462,13 @@ class ViewGenerator extends InfyOmViewGenerator
     public function rollback($views = [])
     {  
         $files = [
-			self::TABLE_GENERATE_BLADE_FILE, 
-			self::INDEX_GENERATE_BLADE_FILE,	 
-			self::FIELDS_GENERATE_BLADE_FILE, 
-			self::CREATE_GENERATE_BLADE_FILE, 
-			self::EDIT_GENERATE_BLADE_FILE, 
-			self::SHOW_GENERATE_BLADE_FILE, 
-			self::SHOW_FIELDS_GENERATE_BLADE_FILE,  
+            self::TABLE_GENERATE_BLADE_FILE, 
+            self::INDEX_GENERATE_BLADE_FILE,     
+            self::FIELDS_GENERATE_BLADE_FILE, 
+            self::CREATE_GENERATE_BLADE_FILE, 
+            self::EDIT_GENERATE_BLADE_FILE, 
+            self::SHOW_GENERATE_BLADE_FILE, 
+            self::SHOW_FIELDS_GENERATE_BLADE_FILE,  
         ];
 
         if (!empty($views)) {
