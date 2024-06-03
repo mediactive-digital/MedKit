@@ -62,7 +62,7 @@ class RoleDataTable extends YajraDataTable {
 		
         return $this->builder()
             ->columns($this->getColumns())
-            ->minifiedAjax()
+            ->minifiedAjax($this->getUrl())
             ->addAction(['width' => '120px', 'printable' => false])
             ->parameters([
                 'dom' => 'Bfrtip',

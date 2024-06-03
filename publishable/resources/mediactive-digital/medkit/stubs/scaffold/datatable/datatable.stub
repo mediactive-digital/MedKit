@@ -50,7 +50,7 @@ class $MODEL_NAME$DataTable extends YajraDataTable {
 
         return $this->builder()
             ->columns($this->getColumns())
-            ->minifiedAjax()
+            ->minifiedAjax($this->getUrl())
             ->addAction(['width' => '120px', 'printable' => false, 'title' => _i('Actions')])
             ->parameters([
                 'dom' => 'Bfrtip',

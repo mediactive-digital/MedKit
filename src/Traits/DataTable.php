@@ -14,6 +14,11 @@ use LaravelGettext;
 trait DataTable {
 
     /**
+     * @var string
+     */
+    protected $url = '';
+
+    /**
      * Edit boolean column.
      *
      * @param int|null $value
@@ -415,5 +420,29 @@ trait DataTable {
     private function wrapColumn(Builder $query, $column, bool $raw = false): string {
 
 		return $raw ? (string)$column : $query->getConnection()->getQueryGrammar()->wrap($column);
+    }
+
+    /**
+     * Get URL.
+     * 
+     * @return string
+     */
+    public function getUrl(): string {
+
+        return $this->url;
+    }
+
+    /**
+     * Set URL.
+     * 
+     * @param string $url
+     * 
+     * @return self
+     */
+    public function setUrl(string $url = ''): self {
+
+        $this->url = $url;
+        
+        return $this;
     }
 }
