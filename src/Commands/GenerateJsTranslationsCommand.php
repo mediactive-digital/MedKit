@@ -100,34 +100,29 @@ class GenerateJsTranslationsCommand extends Command {
                 $dataTableTranslations = ($dataTableTranslations = TranslationHelper::getDataTable($locale)) ? json_encode($dataTableTranslations) : '{}';
 
                 $script = <<<EOT
-(function(root, factory) {
-    if (typeof define === "function" && define.amd) define([], factory);
-    else if (typeof exports === "object") module.exports = factory();
-    else root.Lang = factory()
-})(this, function() {
-    var Lang = function() {
+class Lang {
+    constructor() {
         this.locale = "$locale";
         this.messages = $translations;
         this.dt = $dataTableTranslations
     };
-    Lang.prototype.getLocale = function() {
+    getLocale() {
         return this.locale
     };
-    Lang.prototype.getDataTable = function() {
+    getDataTable() {
         return this.dt
     };
-    Lang.prototype._i = function(message, parameters) {
+    _i(message, parameters) {
         parameters = typeof parameters !== "undefined" ? parameters : [];
         return this.messages[message] ? vsprintf(this.messages[message], parameters) : vsprintf(message, parameters)
     };
-    Lang.prototype._n = function(singular, plural, n, parameters) {
+    _n(singular, plural, n, parameters) {
         parameters = typeof parameters !== "undefined" ? parameters : [];
         if (n > 1) return this.messages[plural] ? vsprintf(this.messages[plural], parameters) : vsprintf(plural, parameters);
         return this.messages[singular] ? vsprintf(this.messages[singular], parameters) : vsprintf(singular, parameters)
     };
-    var LangObject = new Lang;
-    return LangObject
-});
+};
+window.Lang = new Lang;
 EOT;
 
                 $localePath = rtrim($path, '/') . '/' . $locale . '.js';
