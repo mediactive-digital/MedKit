@@ -15,7 +15,7 @@
         "php": "^8.2",
         "laravel/framework": "^11",
         "illuminate/support": "^11",
-        "laravel-lang/lang": "^12.16",
+        "laravel-lang/lang": "^15.5.1",
         "mediactive-digital/laravel-form-builder": "dev-L11",
         "lavary/laravel-menu": "^1.8.3",
         "spatie/laravel-permission": "^6.4",
