@@ -504,16 +504,6 @@ class InstallCommand extends Command {
      */
     private function generateTranslations() {
 
-        $locales = config('laravel-gettext.supported-locales');
-
-        foreach ($locales as $locale) {
-
-            if (!file_exists(lang_path($locale))) {
-
-                $this->doCommand('php artisan lang:add ' . $locale);
-            }
-        }
-
         $this->doCommand('php artisan medkit:generate-translations');
     }
 

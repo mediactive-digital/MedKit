@@ -18,6 +18,7 @@ use MediactiveDigital\MedKit\Helpers\FormatHelper;
 
 use Arr;
 use Str;
+use Artisan;
 
 class GenerateTranslationsCommand extends Command {
 
@@ -41,9 +42,9 @@ class GenerateTranslationsCommand extends Command {
     protected $filesystem;
 
     /**
-     * @var array $fileloaders
+     * @var array $fileLoader
      */
-    protected $fileloaders;
+    protected $fileLoader;
 
     /**
      * @var array $locales
@@ -97,11 +98,10 @@ class GenerateTranslationsCommand extends Command {
         $this->filesystem = $filesystem;
 
         $resourcePath = str_replace('\\', '/', lang_path()) . '/';
-        $vendorPath = str_replace('\\', '/', base_path('vendor/laravel-lang/lang/locales/'));
 
-        $this->fileloaders = [
-            $resourcePath => new FileLoader($this->filesystem, $resourcePath),
-            $vendorPath => new FileLoader($this->filesystem, $vendorPath)
+        $this->fileLoader = [
+            'path' => $resourcePath,
+            'loader' => new FileLoader($this->filesystem, $resourcePath)
         ];
 
         $this->locales = config('laravel-gettext.supported-locales');
@@ -196,22 +196,22 @@ class GenerateTranslationsCommand extends Command {
                 }
             }
 
-            $fileloader = $this->getFileloader($locale);
+            $fileLoader = $this->getFileLoader($locale);
 
-            if ($fileloader) {
+            if ($fileLoader) {
 
-                $this->comment('Laravel translations directory found : ' . $fileloader['path']);
+                $this->comment('Laravel translations directory found : ' . $fileLoader['path']);
 
-                $laravelTranslations = $this->filesystem->files($fileloader['path']);
+                $laravelTranslations = $this->filesystem->files($fileLoader['path']);
 
                 if ($hasCatalog) {
 
                     foreach ($laravelTranslations as $laravelTranslation) {
 
-                        $this->comment('Laravel translations file found : ' . $fileloader['path'] . '/' . $laravelTranslation->getFilename());
+                        $this->comment('Laravel translations file found : ' . $fileLoader['path'] . '/' . $laravelTranslation->getFilename());
 
                         $group = $laravelTranslation->getBasename('.php');
-                        $translations = $fileloader['loader']->load($fileloader['locale'], $group);
+                        $translations = $fileLoader['loader']->load($fileLoader['locale'], $group);
 
                         if ($translations) {
 
@@ -284,14 +284,30 @@ class GenerateTranslationsCommand extends Command {
 
                             $entry = $entry ?: new Entry($key, $translation);
                             $references = $entry->getReference();
+                            $addReference = true;
 
-                            if (!in_array($this->reference, $references)) {
+                            foreach ($references as $reference) {
+
+                                if ($this->reference == $reference || Str::startsWith($reference, $this->reference . ':')) {
+
+                                    $addReference = false;
+
+                                    break;
+                                }
+                            }
+
+                            if ($addReference) {
 
                                 $references[] = $this->reference;
                             }
 
                             $entry->setReference($references);
                             $datas['catalog']->addEntry($entry);
+                        }
+
+                        foreach ($datas['catalog']->getEntries() as $entry) {
+
+                            $entry->setPreviousEntry(null);
                         }
 
                         $fileHandler = new SepiaFileSystem($datas['file']);
@@ -333,11 +349,11 @@ class GenerateTranslationsCommand extends Command {
      *
      * @param string $locale
      *
-     * @return array $fileloader
+     * @return array $fileLoader
      */
-    public function getFileloader(string $locale): array {
+    public function getFileLoader(string $locale): array {
 
-        $fileloader = [];
+        $fileLoader = [];
 
         $locales = [
             $locale
@@ -350,43 +366,28 @@ class GenerateTranslationsCommand extends Command {
 
         foreach ($locales as $locale) {
 
-            foreach ($this->fileloaders as $path => $loader) {
+            extract($this->fileLoader);
 
-                $fullPath = $path . $locale;
+            $fullPath = $path . $locale;
+            $isDir = $this->filesystem->isDirectory($fullPath);
+
+            if (!$isDir) {
+
+                Artisan::call('lang:add ' . $locale);
+
                 $isDir = $this->filesystem->isDirectory($fullPath);
+            }
 
-                if (!$isDir) {
+            if ($isDir) {
 
-                    $directories = $this->filesystem->directories($path);
-                    
-                    foreach ($directories as $directory) {
-
-                        $basename = $this->filesystem->basename($directory);
-
-                        if (Str::startsWith($basename, $locale . '-')) {
-
-                            $locale = $basename;
-                            $fullPath = $path . $locale;
-                            $isDir = true;
-
-                            break;
-                        }
-                    }
-                }
-
-                if ($isDir) {
-
-                    $fileloader = [
-                        'locale' => $locale,
-                        'path' => $fullPath,
-                        'loader' => $loader
-                    ];
-
-                    break 2;
-                }
+                $fileLoader = [
+                    'locale' => $locale,
+                    'path' => $fullPath,
+                    'loader' => $loader
+                ];
             }
         }
 
-        return $fileloader;
+        return $fileLoader;
     }
 }
