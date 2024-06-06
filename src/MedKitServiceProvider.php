@@ -31,6 +31,10 @@ use MediactiveDigital\MedKit\Commands\Common\SeederGeneratorCommand;
 
 use MediactiveDigital\MedKit\Helpers\AssetHelper;
 
+use Illuminate\Translation\TranslationServiceProvider as IlluminateTranslationServiceProvider;
+
+use ReflectionClass;
+
 class MedKitServiceProvider extends ServiceProvider {
 
     /**
@@ -74,8 +78,26 @@ class MedKitServiceProvider extends ServiceProvider {
         });
 
         $this->app->register(EventServiceProvider::class);
-        $this->app->register(TranslationServiceProvider::class);
+        $translationServiceProvider = $this->app->register(TranslationServiceProvider::class);
         $this->app->register(MacroServiceProvider::class);
+
+        $appReflection = new ReflectionClass($this->app);
+
+        $property = $appReflection->getProperty('serviceProviders');
+        $property->setAccessible(true);
+
+        $serviceProviders = $property->getValue($this->app);
+        $serviceProviders[IlluminateTranslationServiceProvider::class] = $translationServiceProvider;
+
+        $property->setValue($this->app, $serviceProviders);
+
+        $property = $appReflection->getProperty('loadedProviders');
+        $property->setAccessible(true);
+
+        $loadedProviders = $property->getValue($this->app);
+        $loadedProviders[IlluminateTranslationServiceProvider::class] = true;
+
+        $property->setValue($this->app, $loadedProviders);
 
         $this->registerCommands();
     }
