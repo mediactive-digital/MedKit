@@ -122,7 +122,7 @@ class Lang {
         return this.messages[singular] ? vsprintf(this.messages[singular], parameters) : vsprintf(singular, parameters)
     };
 };
-window.Lang = new Lang;
+window.Lang = Lang = new Lang;
 EOT;
 
                 $localePath = rtrim($path, '/') . '/' . $locale . '.js';
